@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition } from "react";
@@ -57,7 +58,25 @@ export default function SciSummaryPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.type === "text/plain" && selectedFile.size <= 5000000) { // 5MB limit
+      const allowedTypes = [
+        "text/plain",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+      if (allowedTypes.includes(selectedFile.type) && selectedFile.size <= 5000000) { // 5MB limit
+        if (selectedFile.type !== "text/plain") {
+            toast({
+              title: "File type not supported for summarization yet",
+              description: "Currently, only .txt files can be summarized. Support for other file types is coming soon!",
+            });
+            setFile(selectedFile);
+            setArticleText(null);
+            setSummary(null);
+            form.reset();
+            return;
+        }
+
         setFile(selectedFile);
         setSummary(null);
         form.reset();
@@ -77,7 +96,7 @@ export default function SciSummaryPage() {
         toast({
           variant: "destructive",
           title: "Invalid File",
-          description: "Please upload a .txt file that is less than 5MB.",
+          description: "Please upload a .txt, .pdf, or .doc/.docx file that is less than 5MB.",
         });
         e.target.value = "";
       }
@@ -96,7 +115,7 @@ export default function SciSummaryPage() {
       toast({
         variant: "destructive",
         title: "No Article Found",
-        description: "Please upload an article before generating a summary.",
+        description: "Please upload and process an article before generating a summary.",
       });
       return;
     }
@@ -133,7 +152,7 @@ export default function SciSummaryPage() {
           <CardHeader>
             <CardTitle className="text-2xl font-headline">Generator</CardTitle>
             <CardDescription>
-              Upload a .txt article, provide your context, and choose a length.
+              Upload a .txt, .pdf, or .docx article, provide your context, and choose a length.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -144,9 +163,9 @@ export default function SciSummaryPage() {
                   <span className="font-medium">
                     Click to upload or drag and drop
                   </span>
-                  <span className="text-sm">TXT files only (Max 5MB)</span>
+                  <span className="text-sm">TXT, PDF, DOCX files only (Max 5MB)</span>
                 </div>
-                <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".txt,text/plain" />
+                <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".txt,text/plain,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
               </label>
             ) : (
               <div className="flex items-center justify-between bg-secondary p-3 rounded-md">
@@ -160,8 +179,8 @@ export default function SciSummaryPage() {
               </div>
             )}
             
-            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${file ? "max-h-[1000px] opacity-100 pt-6" : "max-h-0 opacity-0"}`}>
-              {file && (
+            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${file && articleText ? "max-h-[1000px] opacity-100 pt-6" : "max-h-0 opacity-0"}`}>
+              {file && articleText && (
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                     <FormField
@@ -227,7 +246,7 @@ export default function SciSummaryPage() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={isPending}>
+                    <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={isPending || !articleText}>
                       {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Generate Summary
                     </Button>
