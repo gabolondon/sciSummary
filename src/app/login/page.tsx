@@ -107,8 +107,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-sm mx-4">
+    <div className="flex items-center justify-center min-h-screen">
+      <Card className="w-full max-w-sm mx-4 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-headline">Welcome Back</CardTitle>
           <CardDescription>Sign in to continue to SciSummary</CardDescription>
@@ -151,7 +151,7 @@ export default function LoginPage() {
 
           <div className="relative my-4">
             <Separator />
-            <span className="absolute left-1/2 -translate-x-1/2 -top-3 bg-card px-2 text-xs text-muted-foreground">
+            <span className="absolute left-1/2 -translate-x-1/2 -top-3 bg-card/80 px-2 text-xs text-muted-foreground">
               OR
             </span>
           </div>
