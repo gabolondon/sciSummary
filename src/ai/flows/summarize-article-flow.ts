@@ -10,19 +10,32 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const SummarizeArticleWithContextInputSchema = z.object({
-  articleText: z
-    .string()
-    .describe('The text content of the scientific article to summarize.'),
-  userContext: z
-    .string()
-    .describe(
-      'The user\u2019s background or field of expertise to tailor the summary.'
-    ),
-  summaryLength: z
-    .enum(['short', 'medium', 'large'])
-    .describe('The desired length of the summary (short, medium, large).'),
-});
+const SummarizeArticleWithContextInputSchema = z
+  .object({
+    articleText: z
+      .string()
+      .optional()
+      .describe('The text content of the scientific article to summarize.'),
+    pdfDataUri: z
+      .string()
+      .optional()
+      .describe(
+        "A PDF of a scientific article, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      ),
+    userContext: z
+      .string()
+      .describe(
+        'The user’s background or field of expertise to tailor the summary.'
+      ),
+    summaryLength: z
+      .enum(['short', 'medium', 'large'])
+      .describe('The desired length of the summary (short, medium, large).'),
+  })
+  .refine(data => data.articleText || data.pdfDataUri, {
+    message: 'Either articleText or pdfDataUri must be provided.',
+    path: ['articleText'],
+  });
+
 export type SummarizeArticleWithContextInput = z.infer<
   typeof SummarizeArticleWithContextInputSchema
 >;
@@ -46,7 +59,15 @@ const summarizeArticleWithContextPrompt = ai.definePrompt({
   output: {schema: SummarizeArticleWithContextOutputSchema},
   prompt: `Summarize the following scientific article, tailoring the summary to a user with the following background and expertise: {{{userContext}}}.
 
-Article Text: {{{articleText}}}
+{{#if articleText}}
+Article Text:
+{{{articleText}}}
+{{/if}}
+
+{{#if pdfDataUri}}
+Article PDF:
+{{media url=pdfDataUri}}
+{{/if}}
 
 Desired Summary Length: {{{summaryLength}}}
 

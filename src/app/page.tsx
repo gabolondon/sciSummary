@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { generateSummaryAction } from "@/app/actions";
+import type { SummarizeArticleWithContextInput } from "@/ai/flows/summarize-article-flow";
 
 const formSchema = z.object({
   userContext: z.string().min(10, {
@@ -42,7 +43,7 @@ const formSchema = z.object({
 
 export default function SciSummaryPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [articleText, setArticleText] = useState<string | null>(null);
+  const [fileData, setFileData] = useState<Pick<SummarizeArticleWithContextInput, 'articleText' | 'pdfDataUri'> | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -58,32 +59,52 @@ export default function SciSummaryPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      const allowedTypes = [
-        "text/plain",
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ];
-      if (allowedTypes.includes(selectedFile.type) && selectedFile.size <= 5000000) { // 5MB limit
-        if (selectedFile.type !== "text/plain") {
+        setFile(null);
+        setFileData(null);
+        setSummary(null);
+        form.reset();
+
+        if (selectedFile.type === "application/pdf" && selectedFile.size > 2 * 1024 * 1024) { // 2MB limit for PDF
             toast({
-              title: "File type not supported for summarization yet",
-              description: "Currently, only .txt files can be summarized. Support for other file types is coming soon!",
+              variant: "destructive",
+              title: "File Too Large",
+              description: "PDF files must be smaller than 2MB.",
             });
-            setFile(selectedFile);
-            setArticleText(null);
-            setSummary(null);
-            form.reset();
+            e.target.value = "";
+            return;
+        }
+
+        if (selectedFile.size > 5 * 1024 * 1024) { // 5MB limit for other files
+            toast({
+              variant: "destructive",
+              title: "File Too Large",
+              description: "Files must be smaller than 5MB.",
+            });
+            e.target.value = "";
+            return;
+        }
+
+        const allowedTypes = [
+            "text/plain",
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ];
+
+        if (!allowedTypes.includes(selectedFile.type)) {
+            toast({
+              variant: "destructive",
+              title: "Invalid File Type",
+              description: "Please upload a .txt, .pdf, or .doc/.docx file.",
+            });
+            e.target.value = "";
             return;
         }
 
         setFile(selectedFile);
-        setSummary(null);
-        form.reset();
+        
         const reader = new FileReader();
-        reader.onload = (event) => {
-          setArticleText(event.target?.result as string);
-        };
+
         reader.onerror = () => {
           toast({
             variant: "destructive",
@@ -91,31 +112,40 @@ export default function SciSummaryPage() {
             description: "There was an issue reading your file. Please try again.",
           });
         };
-        reader.readAsText(selectedFile);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Invalid File",
-          description: "Please upload a .txt, .pdf, or .doc/.docx file that is less than 5MB.",
-        });
-        e.target.value = "";
-      }
+        
+        if (selectedFile.type === "application/pdf") {
+            reader.onload = (event) => {
+                setFileData({ pdfDataUri: event.target?.result as string });
+            };
+            reader.readAsDataURL(selectedFile);
+        } else if (selectedFile.type === "text/plain") {
+             reader.onload = (event) => {
+                setFileData({ articleText: event.target?.result as string });
+            };
+            reader.readAsText(selectedFile);
+        } else {
+             toast({
+              title: "File type not supported for summarization yet",
+              description: "Currently, only .txt and .pdf files can be summarized. Support for other file types is coming soon!",
+            });
+            setFileData(null); // Not processable yet
+        }
     }
   };
 
   const handleRemoveFile = () => {
     setFile(null);
-    setArticleText(null);
+    setFileData(null);
     setSummary(null);
     form.reset();
   };
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!articleText) {
+    if (!fileData) {
       toast({
         variant: "destructive",
         title: "No Article Found",
-        description: "Please upload and process an article before generating a summary.",
+        description: "Please upload a processable article file (.txt or .pdf) before generating a summary.",
       });
       return;
     }
@@ -123,7 +153,7 @@ export default function SciSummaryPage() {
     setSummary(null);
 
     startTransition(async () => {
-      const result = await generateSummaryAction({ ...values, articleText });
+      const result = await generateSummaryAction({ ...values, ...fileData });
       if (result.error) {
         toast({
           variant: "destructive",
@@ -152,7 +182,7 @@ export default function SciSummaryPage() {
           <CardHeader>
             <CardTitle className="text-2xl font-headline">Generator</CardTitle>
             <CardDescription>
-              Upload a .txt, .pdf, or .docx article, provide your context, and choose a length.
+              Upload a .txt or .pdf article, provide your context, and choose a length.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -163,7 +193,7 @@ export default function SciSummaryPage() {
                   <span className="font-medium">
                     Click to upload or drag and drop
                   </span>
-                  <span className="text-sm">TXT, PDF, DOCX files only (Max 5MB)</span>
+                  <span className="text-sm">TXT, PDF files (Max 2MB for PDF, 5MB for others)</span>
                 </div>
                 <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".txt,text/plain,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
               </label>
@@ -179,8 +209,8 @@ export default function SciSummaryPage() {
               </div>
             )}
             
-            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${file && articleText ? "max-h-[1000px] opacity-100 pt-6" : "max-h-0 opacity-0"}`}>
-              {file && articleText && (
+            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${file && fileData ? "max-h-[1000px] opacity-100 pt-6" : "max-h-0 opacity-0"}`}>
+              {file && fileData && (
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                     <FormField
@@ -246,7 +276,7 @@ export default function SciSummaryPage() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={isPending || !articleText}>
+                    <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={isPending || !fileData}>
                       {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Generate Summary
                     </Button>

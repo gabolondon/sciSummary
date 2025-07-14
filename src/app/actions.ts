@@ -5,7 +5,7 @@ import { summarizeArticleWithContext, SummarizeArticleWithContextInput } from "@
 export async function generateSummaryAction(input: SummarizeArticleWithContextInput): Promise<{ summary?: string; error?: string }> {
   try {
     // Basic validation
-    if (!input.articleText || !input.userContext || !input.summaryLength) {
+    if ((!input.articleText && !input.pdfDataUri) || !input.userContext || !input.summaryLength) {
         return { error: "Missing required fields for summarization." };
     }
 
