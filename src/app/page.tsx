@@ -1,11 +1,13 @@
 
+
 "use client";
 
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { UploadCloud, FileText, X, BrainCircuit, Loader2 } from "lucide-react";
+import { UploadCloud, FileText, X, BrainCircuit, Loader2, LogOut } from "lucide-react";
+import Link from 'next/link';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { generateSummaryAction } from "@/app/actions";
 import type { SummarizeArticleWithContextInput } from "@/ai/flows/summarize-article-flow";
+import { useAuth, signOut } from '@/context/auth-context';
 
 const formSchema = z.object({
   userContext: z.string().min(10, {
@@ -41,7 +44,7 @@ const formSchema = z.object({
   }),
 });
 
-export default function SciSummaryPage() {
+function SciSummaryPage() {
   const [file, setFile] = useState<File | null>(null);
   const [fileData, setFileData] = useState<Pick<SummarizeArticleWithContextInput, 'articleText' | 'pdfDataUri'> | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
@@ -87,15 +90,13 @@ export default function SciSummaryPage() {
         const allowedTypes = [
             "text/plain",
             "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         ];
 
         if (!allowedTypes.includes(selectedFile.type)) {
             toast({
               variant: "destructive",
               title: "Invalid File Type",
-              description: "Please upload a .txt, .pdf, or .doc/.docx file.",
+              description: "Please upload a .txt or .pdf file.",
             });
             e.target.value = "";
             return;
@@ -123,12 +124,6 @@ export default function SciSummaryPage() {
                 setFileData({ articleText: event.target?.result as string });
             };
             reader.readAsText(selectedFile);
-        } else {
-             toast({
-              title: "File type not supported for summarization yet",
-              description: "Currently, only .txt and .pdf files can be summarized. Support for other file types is coming soon!",
-            });
-            setFileData(null); // Not processable yet
         }
     }
   };
@@ -169,13 +164,19 @@ export default function SciSummaryPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-2xl mx-auto">
-        <header className="text-center mb-8">
+        <header className="text-center mb-8 relative">
           <h1 className="font-headline text-4xl sm:text-5xl font-bold tracking-tight text-primary">
             SciSummary
           </h1>
           <p className="text-muted-foreground mt-2 text-lg">
             Generate scientific article summaries tailored to your expertise.
           </p>
+           <div className="absolute top-0 right-0">
+               <Button variant="ghost" onClick={signOut}>
+                   <LogOut className="mr-2 h-4 w-4" />
+                   Sign Out
+               </Button>
+           </div>
         </header>
 
         <Card className="w-full transition-all duration-300">
@@ -195,7 +196,7 @@ export default function SciSummaryPage() {
                   </span>
                   <span className="text-sm">TXT, PDF files (Max 2MB for PDF, 5MB for others)</span>
                 </div>
-                <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".txt,text/plain,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".txt,text/plain,.pdf,application/pdf" />
               </label>
             ) : (
               <div className="flex items-center justify-between bg-secondary p-3 rounded-md">
@@ -322,3 +323,35 @@ export default function SciSummaryPage() {
     </div>
   );
 }
+
+const ProtectedSciSummaryPage = () => {
+    const { user, loading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push('/login');
+        }
+    }, [user, loading, router]);
+
+    if (loading || !user) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    return <SciSummaryPage />;
+};
+
+
+// We need to import useRouter and useEffect for the protected route logic
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+const Page = () => {
+    return <ProtectedSciSummaryPage />;
+}
+
+export default Page;
