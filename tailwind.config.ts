@@ -11,7 +11,7 @@ export default {
     extend: {
       fontFamily: {
         body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        headline: ['Space Grotesk', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -93,7 +93,29 @@ export default {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
       },
+      typography: (theme: any) => ({
+        DEFAULT: {
+          css: {
+            '--tw-prose-invert-body': theme('colors.foreground/90'),
+            '--tw-prose-invert-headings': theme('colors.primary'),
+            '--tw-prose-invert-lead': theme('colors.foreground'),
+            '--tw-prose-invert-links': theme('colors.primary'),
+            '--tw-prose-invert-bold': theme('colors.foreground'),
+            '--tw-prose-invert-counters': theme('colors.muted.foreground'),
+            '--tw-prose-invert-bullets': theme('colors.border'),
+            '--tw-prose-invert-hr': theme('colors.border'),
+            '--tw-prose-invert-quotes': theme('colors.accent.foreground'),
+            '--tw-prose-invert-quote-borders': theme('colors.accent'),
+            '--tw-prose-invert-captions': theme('colors.muted.foreground'),
+            '--tw-prose-invert-code': theme('colors.foreground'),
+            '--tw-prose-invert-pre-code': theme('colors.card.foreground'),
+            '--tw-prose-invert-pre-bg': theme('colors.card.DEFAULT'),
+            '--tw-prose-invert-th-borders': theme('colors.border'),
+            '--tw-prose-invert-td-borders': theme('colors.border'),
+          },
+        },
+      }),
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 } satisfies Config;
