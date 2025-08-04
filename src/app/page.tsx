@@ -69,40 +69,43 @@ function SciSummaryPage() {
 
       if (
         selectedFile.type === "application/pdf" &&
-        selectedFile.size > 5 * 1024 * 1024
+        selectedFile.size > 2 * 1024 * 1024
       ) {
-        //52MB limit for PDF
         toast({
           variant: "destructive",
           title: "File Too Large",
-          description: "PDF files must be smaller than 5MB.",
+          description: "PDF files must be smaller than 2MB.",
         });
         e.target.value = "";
         return;
       }
-
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        // 5MB limit for other files
-        toast({
-          variant: "destructive",
-          title: "File Too Large",
-          description: "Files must be smaller than 5MB.",
-        });
-        e.target.value = "";
-        return;
-      }
-
-      const allowedTypes = ["text/plain", "application/pdf"];
+      
+      const allowedTypes = [
+        'text/plain',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
 
       if (!allowedTypes.includes(selectedFile.type)) {
         toast({
-          variant: "destructive",
-          title: "Invalid File Type",
-          description: "Please upload a .txt or .pdf file.",
+          variant: 'destructive',
+          title: 'Invalid File Type',
+          description: 'Please upload a .txt, .pdf, or .doc/.docx file.',
         });
-        e.target.value = "";
+        e.target.value = '';
         return;
       }
+
+      if (selectedFile.type !== 'text/plain' && selectedFile.type !== 'application/pdf') {
+        toast({
+          variant: 'default',
+          title: 'File Type Not Supported for Summarization',
+          description:
+            'Only .txt and .pdf files can be summarized at this time. Support for other file types is coming soon!',
+        });
+      }
+
 
       setFile(selectedFile);
 
@@ -127,6 +130,8 @@ function SciSummaryPage() {
           setFileData({ articleText: event.target?.result as string });
         };
         reader.readAsText(selectedFile);
+      } else {
+        setFileData(null); // For now, don't process other file types
       }
     }
   };
@@ -142,9 +147,9 @@ function SciSummaryPage() {
     if (!fileData) {
       toast({
         variant: "destructive",
-        title: "No Article Found",
+        title: "No Processable Article",
         description:
-          "Please upload a processable article file (.txt or .pdf) before generating a summary.",
+          "Please upload a supported article file (.txt or .pdf) before generating a summary.",
       });
       return;
     }
@@ -183,7 +188,7 @@ function SciSummaryPage() {
           </div>
         </header>
 
-        <Card className="w-full transition-all duration-300">
+        <Card className="w-full transition-all duration-300 bg-card/80 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-2xl font-headline">Generator</CardTitle>
             <CardDescription>
@@ -203,16 +208,16 @@ function SciSummaryPage() {
                     Click to upload or drag and drop
                   </span>
                   <span className="text-sm">
-                    TXT, PDF files (Max 5MB for PDF, 5MB for others)
+                    TXT, PDF, DOC, DOCX files (Max 2MB for PDF)
                   </span>
                 </div>
                 <input
                   id="file-upload"
                   name="file-upload"
                   type="file"
-                  className="whitespace-pre-wrap text-wrap"
+                  className="sr-only"
                   onChange={handleFileChange}
-                  accept=".txt,text/plain,.pdf,application/pdf"
+                  accept=".txt,text/plain,.pdf,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 />
               </label>
             ) : (
@@ -231,12 +236,12 @@ function SciSummaryPage() {
 
             <div
               className={`transition-all duration-500 ease-in-out overflow-hidden ${
-                file && fileData
+                file
                   ? "max-h-[1000px] opacity-100 pt-6"
                   : "max-h-0 opacity-0"
               }`}
             >
-              {file && fileData && (
+              {file && (
                 <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit(onSubmit)}
@@ -325,7 +330,7 @@ function SciSummaryPage() {
         </Card>
 
         {isPending && (
-          <Card className="mt-8">
+          <Card className="mt-8 bg-card/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="font-headline text-2xl">
                 Generating Summary...
@@ -346,7 +351,7 @@ function SciSummaryPage() {
             className="mt-8 transition-opacity duration-500"
             style={{ opacity: summary ? 1 : 0 }}
           >
-            <Card className="w-full">
+            <Card className="w-full bg-card/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="font-headline text-2xl text-primary">
                   Generated Summary
@@ -354,7 +359,7 @@ function SciSummaryPage() {
               </CardHeader>
               <CardContent>
                 <div className="prose prose-invert max-w-none text-base leading-relaxed text-foreground/90">
-                  {summary.split("\n").map((paragraph, index) => (
+                  {summary.split("\n\n").map((paragraph, index) => (
                     <p key={index}>{paragraph}</p>
                   ))}
                 </div>

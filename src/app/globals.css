@@ -39,7 +39,7 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
   .dark {
-    --background: 0 0% 13.3%; /* #222222 */
+    --background: 222 47.4% 11.2%; /* #111827 */
     --foreground: 0 0% 98%;
     --card: 0 0% 15%;
     --card-foreground: 0 0% 98%;
@@ -51,7 +51,7 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
-    --accent: 33 100% 64.3%; /* #FFB347 */
+    --accent: 14 90% 60%; /* Adjusted for a warmer tone like #F97316 */
     --accent-foreground: 0 0% 9%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
@@ -81,9 +81,36 @@
   body {
     @apply text-foreground;
     background-color: hsl(var(--background));
-    background-image: radial-gradient(ellipse at top, hsl(var(--background)), hsl(var(--primary) / 0.2)),
-                      radial-gradient(ellipse at bottom, hsl(var(--accent) / 0.2), transparent);
+    position: relative;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.3), transparent),
+      radial-gradient(ellipse 80% 50% at 50% 120%, hsl(var(--accent) / 0.3), transparent);
     background-repeat: no-repeat;
     background-size: 100% 100vh;
+    z-index: -1;
+  }
+  
+  body::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800"><filter id="noise-filter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise-filter)"/></svg>');
+    background-repeat: repeat;
+    background-size: 200px;
+    opacity: 0.05;
+    z-index: -1;
   }
 }
