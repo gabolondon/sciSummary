@@ -69,12 +69,12 @@ function SciSummaryPage() {
 
       if (
         selectedFile.type === "application/pdf" &&
-        selectedFile.size > 2 * 1024 * 1024
+        selectedFile.size > 5 * 1024 * 1024
       ) {
         toast({
           variant: "destructive",
           title: "File Too Large",
-          description: "PDF files must be smaller than 2MB.",
+          description: "PDF files must be smaller than 5MB.",
         });
         e.target.value = "";
         return;
@@ -208,7 +208,7 @@ function SciSummaryPage() {
                     Click to upload or drag and drop
                   </span>
                   <span className="text-sm">
-                    TXT, PDF, DOC, DOCX files (Max 2MB for PDF)
+                    TXT, PDF, DOC, DOCX files (Max 5MB for PDF)
                   </span>
                 </div>
                 <input

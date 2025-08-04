@@ -21,12 +21,12 @@ The file input component was updated to accept PDF (`.pdf`), Microsoft Word (`.d
 
 With PDF files now accepted, the next step was to actually process them.
 
-**Prompt:** "Now add the ability to accept pdf files, for that, the input file should validate that the pdf file should be smaller than 2mb and use the flash model to analyze the pdf file"
+**Prompt:** "Now add the ability to accept pdf files, for that, the input file should validate that the pdf file should be smaller than 5mb and use the flash model to analyze the pdf file"
 
 **Summary:**
 This was a significant update that involved both the frontend and the AI backend.
 
-1.  **Frontend:** A client-side validation was added to ensure uploaded PDF files are under 2MB.
+1.  **Frontend:** A client-side validation was added to ensure uploaded PDF files are under 5MB.
 2.  **Backend (AI Flow):** The Genkit flow (`summarize-article-flow.ts`) was enhanced. It can now receive PDF files as a Base64-encoded data URI. The prompt was updated to instruct the Gemini Flash model on how to process the `pdfDataUri` input.
 
 *   **Key files modified:** `src/app/page.tsx`, `src/ai/flows/summarize-article-flow.ts`
